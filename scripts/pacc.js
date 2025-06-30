@@ -13,6 +13,8 @@ var settings = {
     metaThreshold: 'LEVEL_BALL'
 }
 
+var evolutionLines = {};
+
 var thresholdMapping = {
     LEVEL_BALL: 0,
     NET_BALL: 1,
@@ -156,7 +158,6 @@ var uniqueNames = {
     'ZYGARDE_50': 'ZYGARDE_50_FORME',
     'ZYGARDE_100': 'ZYGARDE_100_FORME',
     'AEGISLASH': 'AEGISLASH_SHIELD',
-    'AEGISLASH_BLADE': 'AEGISLASH',
     'CASTFORM_HAIL': 'CASTFORM_SNOWY',
     'CASTFORM_RAIN': 'CASTFORM_RAINY',
     'CASTFORM_SUN': 'CASTFORM_SUNNY',
@@ -210,16 +211,45 @@ async function getPokemonMeta(ignore) {
     }
 }
 
-function observePokemonDetails(element) {
+function getBasicPokemonName(regionalName) {
+    // List of known regional prefixes
+    const regionalPrefixes = [
+        'ALOLAN_', 'GALARIAN_', 'HISUIAN_', 'PALDEAN_', 'GALAR_', 'HISUI_', 'PALDEA_'
+    ];
+    var usedPrefix;
+    for (const prefix of regionalPrefixes) {
+        if (regionalName.startsWith(prefix)) {
+            usedPrefix = prefix;
+            return {
+                name: regionalName.replace(prefix, ''),
+                prefix: usedPrefix
+            };
+        }
+    }
+    return {
+        name: regionalName,
+    };
+}
+
+
+function getHighestEvolution(pokemonName, evolutionLines) {
+    if (!pokemonName || !evolutionLines) return null;
+    return evolutionLines[pokemonName] || null;
+}
+
+var currentTeamBuilderPokemon = null;
+
+async function observePokemonDetails(element) {
     if (!element) {
         return;
     }
+    var isTeambuilder = element.closest('#team-builder');
     var nameElement = element.querySelector('.game-pokemon-detail-entry-name');
     var pokemonContainer = element.querySelector('.game-pokemon-detail.in-shop');
     if (!pokemonContainer) {
         pokemonContainer = element;
     }
-    if (element.querySelector('.meta-container-pacc')) {
+    if (element.querySelector('.meta-container-pacc') && !isTeambuilder) {
         return; // Already processed this element
     }
     if (nameElement && pokemonContainer) {
@@ -230,6 +260,24 @@ function observePokemonDetails(element) {
             .replace(/-/g, '_')                  // Replace dashes with underscores
             .replace(/[^A-Z0-9_\s]/g, '')        // Remove special characters except underscore
             .replace(/\s+/g, '_');               // Replace whitespace with underscore
+
+        var basicPokemonName = getBasicPokemonName(pokemonName);
+        var highestPokemon = getHighestEvolution(basicPokemonName.name, evolutionLines);
+        if (highestPokemon) {
+            pokemonName = basicPokemonName.prefix ? basicPokemonName.prefix + highestPokemon : highestPokemon;
+        } else {
+            if (currentTeamBuilderPokemon !== pokemonName || !isTeambuilder) {
+                console.warn('No evolution found for:', pokemonName);
+            }
+        }
+
+        if (currentTeamBuilderPokemon === pokemonName && isTeambuilder) {
+            return;
+        }
+
+        if (isTeambuilder) {
+            currentTeamBuilderPokemon = pokemonName;
+        }
 
         var metaItems = pokemonMeta[pokemonName] || [];
         if (metaItems && metaItems.length !== 0) {
@@ -255,7 +303,6 @@ function observePokemonDetails(element) {
     }
 }
 
-
 function pollForObservers() {
     if (settings.highlightEnabled) {
         observeSynergyList();
@@ -267,12 +314,16 @@ function pollForObservers() {
 // Start fetching meta data once
 if (!pokemonMetaPromise) {
     pokemonMetaPromise = getPokemonMeta(false);
+    const evoUrl = chrome.runtime.getURL('scripts/evolutionlines.json');
+    fetch(evoUrl)
+        .then(res => res.json())
+        .then(data => { evolutionLines = data; });
 }
 
 setInterval(pollForObservers, 500);
 setInterval(function () {
     if (pokemonMetaLoaded && settings.metaEnabled) {
-        observePokemonDetails(document.querySelector('#team-builder'));
+        observePokemonDetails(document.querySelector('#team-builder .game-pokemon-detail.in-shop'));
         observePokemonDetails(document.querySelector('.game-pokemon-detail.in-battle'));
         observePokemonDetails(document.querySelector('.game-pokemon-detail.in-board'));
     }
