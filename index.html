@@ -1,0 +1,214 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Pokemon Auto Chess Companion</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #23272f;
+            color: #fff;
+            margin: 0;
+            padding: 16px;
+            min-width: 260px;
+        }
+
+        .header {
+            font-size: 1.3em;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .settings-group {
+            background: #2d313a;
+            margin-top: 6px;
+            border-radius: 10px;
+            padding: 16px 16px;
+            box-shadow: 0 2px 8px #0002;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .setting-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            font-size: 1em;
+            letter-spacing: 0.5px;
+        }
+
+        .setting-row.setting-row-select {
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .setting-row.setting-row-select .setting-label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .setting-row.setting-row-select .switch {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            margin: 0;
+        }
+
+        .setting-row.setting-row-select .switch select {
+            width: 100%;
+            min-width: 160px;
+            box-sizing: border-box;
+        }
+
+        /* Toggle Switch Styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch select {
+            width: 180px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            background: #23272f;
+            color: #fff;
+            font-size: 1em;
+            box-shadow: 0 1px 4px #0002;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+            margin-left: 0;
+        }
+
+        .switch select:focus {
+            border: 1.5px solid #4fd1c5;
+            box-shadow: 0 0 0 2px #4fd1c555;
+        }
+
+        .switch option {
+            background: #2d313a;
+            color: #fff;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #555a6a;
+            transition: background 0.3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #fff;
+            transition: transform 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px #0003;
+        }
+
+        input:checked+.slider {
+            background-color: #4fd1c5;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        #reload-hint {
+            display: none;
+            margin-top: 16px;
+            color: #4fd1c5;
+            font-size: 0.98em;
+            text-align: center;
+            opacity: 1;
+            transition: opacity 1s;
+        }
+
+
+        .right {
+            display: block;
+            float: right;
+            font-size: 0.8em;
+            font-weight: normal;
+            color: #4fd1c5;
+        }
+    </style>
+    <script src="scripts/index.js"></script>
+</head>
+
+<body>
+    <div class="header" style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="title" style="display: flex; align-items: center;">
+            <img src="icons/icon-32.png" alt="App Icon"
+                style="vertical-align:middle; width:28px; height:28px; margin-right:10px;">
+            PACC
+        </div>
+        <span class="right" style="float:none; display:block; font-size:0.8em; font-weight:normal; color:#4fd1c5;">
+            version 0.1.0
+        </span>
+    </div>
+    <span style="font-size:0.8em; font-weight:normal; display:block;">Pokemon Auto Chess Companion</span>
+    <div class="settings-group">
+        <div class="setting-row">
+            <span class="setting-label">Synergy Highlight</span>
+            <label class="switch">
+                <input type="checkbox" id="settings-higlight" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="setting-row">
+            <span class="setting-label">Show Meta Items</span>
+            <label class="switch">
+                <input type="checkbox" id="settings-meta" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="setting-row setting-row-select">
+            <span class="setting-label">Meta Items Threshold</span>
+            <label class="switch">
+                <select id="settings-threshold">
+                    <option value="LEVEL_BALL">Level Ball (Elo &gt; 0)</option>
+                    <option value="NET_BALL">Net Ball (Elo &gt; 1050)</option>
+                    <option value="SAFARI_BALL">Safari Ball (Elo &gt; 1100)</option>
+                    <option value="LOVE_BALL">Love Ball (Elo &gt; 1150)</option>
+                    <option value="PREMIER_BALL">Premier Ball (Elo &gt; 1200)</option>
+                    <option value="QUICK_BALL">Quick Ball (Elo &gt; 1250)</option>
+                    <option value="POKE_BALL">Poké Ball (Elo &gt; 1300)</option>
+                    <option value="SUPER_BALL">Great Ball (Elo &gt; 1350)</option>
+                    <option value="ULTRA_BALL">Ultra Ball (Elo &gt; 1400)</option>
+                    <option value="MASTER_BALL">Master Ball (Elo &gt; 1500)</option>
+                    <option value="BEAST_BALL">Beast Ball (Elo &gt; 1700)</option>
+                </select>
+            </label>
+        </div>
+        <div id="reload-hint"
+            style="display:none; margin-top:16px; color:#4fd1c5; font-size:0.98em; text-align:center;">
+            Some changes will only take effect after you reload the page.
+        </div>
+    </div>
+</body>
+
+</html>
