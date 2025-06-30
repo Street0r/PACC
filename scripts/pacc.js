@@ -165,12 +165,8 @@ var uniqueNames = {
     'FARFETCH_D': 'FARFETCHD',
     'GALARIAN_FARFETCH_D': 'GALARIAN_FARFETCHD',
     'DARMANITAN_ZEN': 'DARMANITAN',
-    'GALAR_CORSOLA': 'GALARARIAN_CORSOLA',
+    'GALAR_CORSOLA': 'GALARIAN_CORSOLA',
     'SHADOW_LUGIA': 'XD001',
-    'MINIOR_KERNEL_BLUE': 'MINIOR',
-    'MINIOR_KERNEL_RED': 'MINIOR',
-    'MINIOR_KERNEL_ORANGE': 'MINIOR',
-    'MINIOR_KERNEL_GREEN': 'MINIOR',
     'MIMIKYU_BUSTED': 'MIMIKYU',
     'HISUI_ARCANINE': 'HISUIAN_ARCANINE',
     'HISUI_ELECTRODE': 'HISUIAN_ELECTRODE',
@@ -211,6 +207,12 @@ async function getPokemonMeta(ignore) {
     }
 }
 
+var exceptionPokemon = [
+    'GALARIAN_CORSOLA',
+    'PALDEAN_WOOPER',
+    'HISUIAN_SNEASEL'
+];
+
 function getBasicPokemonName(regionalName) {
     // List of known regional prefixes
     const regionalPrefixes = [
@@ -218,7 +220,7 @@ function getBasicPokemonName(regionalName) {
     ];
     var usedPrefix;
     for (const prefix of regionalPrefixes) {
-        if (regionalName.startsWith(prefix)) {
+        if (regionalName.startsWith(prefix) && !exceptionPokemon.includes(regionalName)) {
             usedPrefix = prefix;
             return {
                 name: regionalName.replace(prefix, ''),
@@ -246,10 +248,11 @@ async function observePokemonDetails(element) {
     var isTeambuilder = element.closest('#team-builder');
     var nameElement = element.querySelector('.game-pokemon-detail-entry-name');
     var pokemonContainer = element.querySelector('.game-pokemon-detail.in-shop');
+    var itemContainer = element.querySelector('.meta-container-pacc');
     if (!pokemonContainer) {
         pokemonContainer = element;
     }
-    if (element.querySelector('.meta-container-pacc') && !isTeambuilder) {
+    if (itemContainer && !isTeambuilder) {
         return; // Already processed this element
     }
     if (nameElement && pokemonContainer) {
@@ -264,7 +267,7 @@ async function observePokemonDetails(element) {
         var basicPokemonName = getBasicPokemonName(pokemonName);
         var highestPokemon = getHighestEvolution(basicPokemonName.name, evolutionLines);
         if (highestPokemon) {
-            pokemonName = basicPokemonName.prefix ? basicPokemonName.prefix + highestPokemon : highestPokemon;
+            pokemonName = basicPokemonName.prefix && !exceptionPokemon.includes(pokemonName) ? basicPokemonName.prefix + highestPokemon : highestPokemon;
         } else {
             if (currentTeamBuilderPokemon !== pokemonName || !isTeambuilder) {
                 console.warn('No evolution found for:', pokemonName);
@@ -281,7 +284,6 @@ async function observePokemonDetails(element) {
 
         var metaItems = pokemonMeta[pokemonName] || [];
         if (metaItems && metaItems.length !== 0) {
-            var itemContainer = document.querySelector('.meta-container-pacc');
             var titleElement = document.createElement('div');
             titleElement.innerText = 'Meta Items';
             if (!itemContainer) {
@@ -299,6 +301,10 @@ async function observePokemonDetails(element) {
                 itemContainer.appendChild(itemElement);
             });
             pokemonContainer.appendChild(itemContainer);
+        } else {
+            if (itemContainer) {
+                itemContainer.remove(); // Remove empty item container
+            }
         }
     }
 }
