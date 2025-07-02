@@ -148,43 +148,6 @@ function observeSynergyList() {
 
 let pokemonMetaPromise = null;
 let pokemonMetaLoaded = false;
-var uniqueNames = {
-    'URSHIFU_RAPID': 'URSHIFU_RAPID_STRIKE',
-    'URSHIFU_SINGLE': 'URSHIFU_SINGLE_STRIKE',
-    'MELOETTA': 'MELOETTA_ARIA',
-    'PIROUETTE_MELOETTA': 'MELOETTA_PIROUETTE',
-    'ORIGIN_GIRATINA': 'GIRATINA_ORIGIN',
-    'ZYGARDE_10': 'ZYGARDE_10_FORME',
-    'ZYGARDE_50': 'ZYGARDE_50_FORME',
-    'ZYGARDE_100': 'ZYGARDE_100_FORME',
-    'AEGISLASH': 'AEGISLASH_SHIELD',
-    'CASTFORM_HAIL': 'CASTFORM_SNOWY',
-    'CASTFORM_RAIN': 'CASTFORM_RAINY',
-    'CASTFORM_SUN': 'CASTFORM_SUNNY',
-    'URSALUNA_BLOODMOON': 'BLOOD_MOON_URSALUNA',
-    'FARFETCH_D': 'FARFETCHD',
-    'GALARIAN_FARFETCH_D': 'GALARIAN_FARFETCHD',
-    'DARMANITAN_ZEN': 'DARMANITAN',
-    'GALAR_CORSOLA': 'GALARIAN_CORSOLA',
-    'SHADOW_LUGIA': 'XD001',
-    'MIMIKYU_BUSTED': 'MIMIKYU',
-    'HISUI_ARCANINE': 'HISUIAN_ARCANINE',
-    'HISUI_ELECTRODE': 'HISUIAN_ELECTRODE',
-    'HISUI_GOODRA': 'HISUIAN_GOODRA',
-    'HISUI_GROWLITHE': 'HISUIAN_GROWLITHE',
-    'HISUI_SLIGGOO': 'HISUIAN_SLIGGOO',
-    'HISUI_SNEASEL': 'HISUIAN_SNEASEL',
-    'HISUI_VOLTORB': 'HISUIAN_VOLTORB',
-    'HISUI_ZOROARK': 'HISUIAN_ZOROARK',
-    'HISUI_ZORUA': 'HISUIAN_ZORUA',
-    'PALDEA_WOOPER': 'PALDEAN_WOOPER',
-    'PORYGON_2': 'PORYGON2',
-    'MORPEKO_HANGRY': 'MORPEKO',
-    'MAUSHOLD_THREE': 'MAUSHOLD_3',
-    'MAUSHOLD_FOUR': 'MAUSHOLD_4',
-    'NIDORANF': 'NIDORAN_F',
-    'NIDORANM': 'NIDORAN_M',
-}
 
 async function getPokemonMeta(ignore) {
     var currentMeta = [];
@@ -194,9 +157,6 @@ async function getPokemonMeta(ignore) {
             var currentMetaThreshold = thresholdMapping[settings.metaThreshold];
             for (key in metaObj[currentMetaThreshold].pokemons) {
                 var currentName = key;
-                if (uniqueNames[key]) {
-                    currentName = uniqueNames[key];
-                }
                 currentMeta[currentName] = metaObj[currentMetaThreshold].pokemons[key].items;
             }
         }
@@ -207,46 +167,140 @@ async function getPokemonMeta(ignore) {
     }
 }
 
-var exceptionPokemon = [
-    'GALARIAN_CORSOLA',
-    'PALDEAN_WOOPER',
-    'HISUIAN_SNEASEL'
+function getLastEvolution(pokemonName, showMultiple) {
+    if (!showMultiple) showMultiple = 1;
+    // Find the family root for the given Pokémon
+    const familyRoot = window.PkmFamily[pokemonName];
+    if (!familyRoot) return [pokemonName];
+
+    // Get all Pokémon in the same family
+    const familyMembers = Object.entries(window.PkmFamily)
+        .filter(([name, root]) => root === familyRoot)
+        .map(([name]) => name);
+
+    // Return the last one (sorted by order of appearance in PkmFamily)
+    var namesArray = [];
+    for (let i = 0; i < showMultiple; i++) {
+        namesArray.push(familyMembers[(familyMembers.length - 1) - i] || pokemonName);
+    }
+    return namesArray;
+}
+
+function extractNumbersFromUrl(url) {
+    // Match all groups of digits in the URL path before the file name
+    const match = url.match(/portrait\/(\d+)(?:\/(\d+))?/);
+    if (!match) return null;
+    if (match[2]) {
+        return `${match[1]}-${match[2]}`;
+    }
+    return match[1];
+}
+
+function getPokemonNameByIndex(index) {
+    return window.PkmByIndex[index] || null;
+}
+
+var multiFormPokemon = {
+    "ROCKRUFF": 3,         // Midday, Midnight, Dusk
+    "KUBFU": 2,          // Single Strike, Rapid Strike
+    "CALYREX": 2,          // Ice Rider, Shadow Rider
+    "RALTS": 2,         // Gardevoir, Gallade
+    "KIRLIA": 2,       // Gardevoir, Gallade
+    "CLAMPERL": 2,         // Huntail, Gorebyss
+    "POLIWHIRL": 2,         // Poliwrath, Politoed
+    "POLIWAG": 2,           // Poliwrath, Politoed
+    "TYROGUE": 3,         // Hitmonlee, Hitmonchan, Hitmontop
+    "WURMPLE": 3,         // Silcoon, Cascoon, Beautifly, Dustox
+    "SILCOON": 2,         // Beautifly, Dustox
+    "CASCOON": 2,         // Beautifly, Dustox
+    "APPLIN": 3,           // Appletun, Flapple,
+    "PICHU": 2,           // Raichu, Alolan Raichu
+    "PIKACHU": 2,         // Raichu, Alolan Raichu
+    "SCYTHER": 2,         // Scizor, Scyther
+    "COSMOG": 2,         // Cosmoem, Solgaleo, Lunala
+    "COSMOEM": 2,         // Solgaleo, Lunala
+    "CUBONE": 2,         // Marowak, Alolan Marowak
+    "SLIGOO": 2,         // Goodra, Hisuian Goodra
+    "GOOMY": 2,         // Goodra, Hisuian Goodra
+    "MORPEKO_HANGRY": 2,         // Morpeko, Hangry Morpeko
+    "NECROZMA": 2,         // Dusk Mane, Dawn Wings, Ultra
+    "MELOETTA": 2,         // Aria Forme, Pirouette Forme
+    "PIROUETTE_MELOETTA": 2,         // Aria
+    "LUGIA": 2,
+    "MIMIKYU_BUSTED": 2,         // Mimikyu, Busted Mimikyu
+    "DARUMAKA": 2,         // Darmanitan, Zen Mode Darmanitan
+    "DARMANITAN_ZEN": 2,
+    "CHARCADET": 2,
+    "EXEGGCUTE": 2,         // Exeggutor, Alolan Exeggutor
+    "CYNDAQUIL": 2,
+    "QUILAVA": 2,         // Typhlosion, Hisuian Typhlosion
+}
+
+var excludeLastEvolution = [
+    "RAICHU",          // Alolan Raichu
+    "GUARDEVOIR",
+    "DARMANITAN",
+    "GOODRA",
+    "MORPEKO",
+    "GALLADE",
+    "POLIWRATH",
+    "POLITOED",
+    "HITMONLEE",
+    "HITMONCHAN",
+    "HITMONTOP",
+    "ZYGARDE_10",
+    "ZYGARDE_50",
+    "URSHIFU_RAPID",
+    "URSHIFU_SINGLE",
+    "EEVEE",
+    "VAPOREON",
+    "JOLTEON",
+    "FLAREON",
+    "ESPEON",
+    "UMBREON",
+    "LEAFEON",
+    "GLACEON",
+    "SYLVEON",
+    "MILCERY",
+    "ALCREMIE_VANILLA",
+    "ALCREMIE_RUBY",
+    "ALCREMIE_MATCHA",
+    "ALCREMIE_MINT",
+    "ALCREMIE_LEMON",
+    "ALCREMIE_SALTED",
+    "ALCREMIE_RUBY_SWIRL",
+    "ALCREMIE_CARAMEL_SWIRL",
+    "ALCREMIE_RAINBOW_SWIRL",
+    "CASTFORM_HAIL",
+    "CASTFORM_RAIN",
+    "CASTFORM_SUN",
+    "CASTFORM",
+    "MIMIKYU",
+    "DEOXYS_ATTACK",
+    "DEOXYS_DEFENSE",
+    "DEOXYS_SPEED",
+    "DEOXYS",
+    "ORIGIN_GIRATINA",
+    "GIRATINA",
+    "ARMAROUGE",
+    "CERULEDGE",
+    "LYCANROC_DUSK", // Dusk Forme
+    "LYCANROC_NIGHT", // Midnight Forme
+    "LYCANROC_DAY", // Midday Forme
+    "EXEGGUTOR",
+    "ALOLAN_EXEGGUTOR", // Alolan Exeggutor
+    "TYPHLOSION", // Hisuian Typhlosion
+    "HISUIAN_TYPHLOSION",
 ];
 
-function getBasicPokemonName(regionalName) {
-    // List of known regional prefixes
-    const regionalPrefixes = [
-        'ALOLAN_', 'GALARIAN_', 'HISUIAN_', 'PALDEAN_', 'GALAR_', 'HISUI_', 'PALDEA_'
-    ];
-    var usedPrefix;
-    for (const prefix of regionalPrefixes) {
-        if (regionalName.startsWith(prefix) && !exceptionPokemon.includes(regionalName)) {
-            usedPrefix = prefix;
-            return {
-                name: regionalName.replace(prefix, ''),
-                prefix: usedPrefix
-            };
-        }
-    }
-    return {
-        name: regionalName,
-    };
-}
-
-
-function getHighestEvolution(pokemonName, evolutionLines) {
-    if (!pokemonName || !evolutionLines) return null;
-    return evolutionLines[pokemonName] || null;
-}
-
 var currentTeamBuilderPokemon = null;
+var metaFound = false;
 
 async function observePokemonDetails(element) {
     if (!element) {
         return;
     }
     var isTeambuilder = element.closest('#team-builder');
-    var nameElement = element.querySelector('.game-pokemon-detail-entry-name');
     var pokemonContainer = element.querySelector('.game-pokemon-detail.in-shop');
     var itemContainer = element.querySelector('.meta-container-pacc');
     if (!pokemonContainer) {
@@ -255,56 +309,70 @@ async function observePokemonDetails(element) {
     if (itemContainer && !isTeambuilder) {
         return; // Already processed this element
     }
-    if (nameElement && pokemonContainer) {
-        var pokemonName = nameElement.innerText
-            .replace(/♂/g, 'M')                  // Replace male symbol with 'M'
-            .replace(/♀/g, 'F')                  // Replace female symbol with 'F'
-            .toUpperCase()
-            .replace(/-/g, '_')                  // Replace dashes with underscores
-            .replace(/[^A-Z0-9_\s]/g, '')        // Remove special characters except underscore
-            .replace(/\s+/g, '_');               // Replace whitespace with underscore
 
-        var basicPokemonName = getBasicPokemonName(pokemonName);
-        var highestPokemon = getHighestEvolution(basicPokemonName.name, evolutionLines);
-        if (highestPokemon) {
-            pokemonName = basicPokemonName.prefix && !exceptionPokemon.includes(pokemonName) ? basicPokemonName.prefix + highestPokemon : highestPokemon;
-        } else {
-            if (currentTeamBuilderPokemon !== pokemonName || !isTeambuilder) {
-                console.warn('No evolution found for:', pokemonName);
+    var imageElement = pokemonContainer.querySelector('.game-pokemon-detail-portrait');
+
+    var pokemonNameByID;
+    var pokemonNames;
+    if (imageElement && pokemonContainer) {
+        var url = imageElement.src;
+        var pokemonId = extractNumbersFromUrl(url);
+        pokemonNameByID = getPokemonNameByIndex(pokemonId);
+
+        if (itemContainer) {
+            if (itemContainer.dataset.pokemonName === pokemonNameByID) {
+                return; // Already processed this Pokémon
+            } else {
+                itemContainer.innerHTML = ''; // Clear previous items
             }
         }
 
-        if (currentTeamBuilderPokemon === pokemonName && isTeambuilder) {
-            return;
+        var amountToShow = multiFormPokemon[pokemonNameByID] ? multiFormPokemon[pokemonNameByID] : 1;
+        var lastEvolutions = getLastEvolution(pokemonNameByID, amountToShow);
+        pokemonNames = [pokemonNameByID];
+        if (!excludeLastEvolution.includes(pokemonNameByID)) {
+            pokemonNames = lastEvolutions;
         }
 
-        if (isTeambuilder) {
-            currentTeamBuilderPokemon = pokemonName;
-        }
+        function createMetaElement(itemContainer, pokemonContainer, pokemonName) {
+            metaFound = false;
 
-        var metaItems = pokemonMeta[pokemonName] || [];
-        if (metaItems && metaItems.length !== 0) {
-            var titleElement = document.createElement('div');
-            titleElement.innerText = 'Meta Items';
+            var metaItems = pokemonMeta[pokemonName] || [];
+            var currentWrapper = document.createElement('div');
             if (!itemContainer) {
                 itemContainer = document.createElement('div');
                 itemContainer.className = 'meta-container-pacc';
-            } else {
-                itemContainer.innerHTML = ''; // Clear previous items
-            };
-            itemContainer.appendChild(titleElement);
-            metaItems.forEach(function (item) {
-                var itemElement = document.createElement('img');
-                itemElement.className = 'item';
-                itemElement.dataset.tooltipId = 'item-detail'
-                itemElement.src = `assets/item/${item}.png`;
-                itemContainer.appendChild(itemElement);
-            });
-            pokemonContainer.appendChild(itemContainer);
-        } else {
-            if (itemContainer) {
-                itemContainer.remove(); // Remove empty item container
+                itemContainer.dataset.pokemonName = pokemonNameByID;
             }
+            if (metaItems && metaItems.length !== 0) {
+                metaFound = true;
+                var prettyName = pokemonName
+                    .toLowerCase()
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, c => c.toUpperCase());
+                var titleElement = document.createElement('div');
+                titleElement.innerText = 'Meta Items - ' + prettyName;
+                currentWrapper.appendChild(titleElement);
+                metaItems.forEach(function (item) {
+                    var itemElement = document.createElement('img');
+                    itemElement.className = 'item';
+                    itemElement.dataset.tooltipId = 'item-detail'
+                    itemElement.src = `assets/item/${item}.png`;
+                    currentWrapper.appendChild(itemElement);
+                });
+                itemContainer.appendChild(currentWrapper);
+                pokemonContainer.appendChild(itemContainer);
+            }
+        }
+
+        pokemonNames.forEach(function (pokemonName) {
+            createMetaElement(itemContainer, pokemonContainer, pokemonName);
+            if (!metaFound) {
+                createMetaElement(itemContainer, pokemonContainer, pokemonNameByID);
+            }
+        });
+        if (itemContainer) {
+            itemContainer.dataset.pokemonName = pokemonNameByID;
         }
     }
 }
@@ -334,4 +402,5 @@ setInterval(function () {
         observePokemonDetails(document.querySelector('.game-pokemon-detail.in-board'));
     }
 }, 250);
+
 console.log('loaded pacc');
