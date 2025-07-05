@@ -187,8 +187,8 @@ function getLastEvolution(pokemonName, showMultiple) {
 }
 
 function extractNumbersFromUrl(url) {
-    // Match all groups of digits in the URL path before the file name
-    const match = url.match(/portrait\/(\d+)(?:\/(\d+))?/);
+    // Match up to three groups of digits in the URL path after 'portrait/'
+    const match = url.match(/portrait\/(\d+)(?:\/(\d+))?(?:\/(\d+))?/);
     if (!match) return null;
     if (match[2]) {
         return `${match[1]}-${match[2]}`;
