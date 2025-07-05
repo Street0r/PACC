@@ -190,10 +190,12 @@ function extractNumbersFromUrl(url) {
     // Match up to three groups of digits in the URL path after 'portrait/'
     const match = url.match(/portrait\/(\d+)(?:\/(\d+))?(?:\/(\d+))?/);
     if (!match) return null;
-    if (match[2]) {
-        return `${match[1]}-${match[2]}`;
+    // If the second group is "0000" or missing, return only the first group
+    if (!match[2] || match[2] === "0000") {
+        return match[1];
     }
-    return match[1];
+    // Otherwise, return first and second group joined with a dash
+    return `${match[1]}-${match[2]}`;
 }
 
 function getPokemonNameByIndex(index) {
