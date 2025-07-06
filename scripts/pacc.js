@@ -41,7 +41,7 @@ chrome.storage.sync.get(['highlight', 'meta', 'metaThreshold'], function (data) 
 chrome.storage.onChanged.addListener(function (changes, area) {
     if (area === 'sync') {
         if (changes.highlight) {
-            settings.highlightEnable = changes.highlight.newValue;
+            settings.highlightEnabled = changes.highlight.newValue;
         }
         if (changes.meta) {
             settings.metaEnabled = changes.meta.newValue;
@@ -54,97 +54,87 @@ chrome.storage.onChanged.addListener(function (changes, area) {
     }
 });
 
-function parseSynergies() {
-    var currentSynergies = document.querySelectorAll('.synergies-container.my-container > div');
+function parseSynergies(currentSynergies) {
     var highlights = [];
     currentSynergies.forEach(function (synergy) {
         var type;
-        var currentValue;
-
         var typeElement = synergy.querySelector('.synergy-icon');
+
         if (typeElement) {
             type = typeElement.title;
         }
-
-        var valueElement = synergy.querySelector('span');
-        if (valueElement) {
-            currentValue = parseInt(valueElement.innerText);
-        }
-
-        if (currentValue >= 2) {
-            highlights.push(type);
-        }
+        highlights.push(type);
     });
     synergiesToHighlight = highlights;
 }
 
-function highlightSynergies(element) {
-    var cardTypeElement = element.querySelectorAll('.synergy-icon');
-    cardTypeElement.forEach(function (icon) {
-        if (icon && synergiesToHighlight.includes(icon.title)) {
-            if (icon && icon.classList) {
-                icon.classList.add('synergy-icon_flashing');
-                console.log('synergy icon flashing for', icon.title);
-            }
-        };
-    });
+function insertAfter(referenceNode, newNode) {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
 
-var synergyObserver = new MutationObserver((mutations) => {
-    for (var mutation of mutations) {
-        // If a new article was added.
-        for (var node of mutation.addedNodes) {
-            if (node instanceof Element) {
-                // Render the reading time for this particular article.
-                highlightSynergies(node);
+function addSynergyShimmer(icon) {
+    if (icon && synergiesToHighlight.includes(icon.title) && !icon.classList.contains('shimmer') && !icon.parentElement.classList.contains('image-shimmer-wrapper')) {
+        if (icon.nextElementSibling && icon.nextElementSibling.matches('.shimmer-overlay')) {
+            icon.nextElementSibling.remove();
+        }
+        var childRect = icon.getBoundingClientRect();
+        var parentRect = icon.parentElement.getBoundingClientRect();
+        var coordinates = {
+            top: childRect.top - parentRect.top,
+            left: childRect.left - parentRect.left,
+            right: childRect.right - parentRect.left,
+            bottom: childRect.bottom - parentRect.top,
+            width: childRect.width,
+            height: childRect.height
+        }
+        if (icon.parentElement.classList.length === 0) {
+            icon.parentElement.classList.add('image-shimmer-wrapper');
+        } else {
+            var shimmerOverlay = document.createElement('div');
+            shimmerOverlay.className = 'shimmer-overlay';
+            icon.classList.add('shimmer');
+            shimmerOverlay.style.right = coordinates.right > 0 ? (coordinates.right - coordinates.width) + 'px' : coordinates.right + 'px';
+            if (icon.closest('#team-builder')) {
+                shimmerOverlay.style.top = '0px';
+            } else {
+                shimmerOverlay.style.top = coordinates.bottom + 'px';
             }
+            shimmerOverlay.style.width = coordinates.width + 'px';
+            shimmerOverlay.style.height = coordinates.height + 'px';
+
+            insertAfter(icon, shimmerOverlay)
         }
     }
-});
+};
 
-let observedPropositionList = null;
+function highlightSynergies(element) {
+    var cardTypeElement = element.querySelectorAll('.synergy-icon');
+    cardTypeElement.forEach(addSynergyShimmer);
+}
+
 
 function observePropositionList() {
     var propositionListNode = document.querySelector('.game-pokemons-proposition-list');
-    if (propositionListNode && propositionListNode !== observedPropositionList) {
-        synergyObserver.observe(propositionListNode, { childList: true });
-        highlightSynergies(propositionListNode);
-        observedPropositionList = propositionListNode;
-        console.log('Observer attached to .game-pokemons-proposition-list');
-    } else if (!propositionListNode) {
-        observedPropositionList = null; // Reset if element is gone
+    if (propositionListNode && propositionListNode.childElementCount > 0) {
+        Array.from(propositionListNode.children).forEach(highlightSynergies);
     }
 }
 
-let observedStoreList = [];
-
 function observeStoreList() {
-    var propositionListNode = document.querySelectorAll('.game-pokemons-store .my-box.clickable.game-pokemon-portrait');
-    for (var i = 0; i < propositionListNode.length; i++) {
-        if (propositionListNode[i] && propositionListNode[i] !== observedStoreList[i]) {
-            synergyObserver.observe(propositionListNode[i], { childList: true });
-            highlightSynergies(propositionListNode[i]);
-            observedStoreList[i] = propositionListNode[i];
-            console.log('Observer attached to .game-pokemons-store');
-        } else if (!propositionListNode) {
-            observedStoreList[i] = null; // Reset if element is gone
-        }
-    }
+    var storeBoxes = document.querySelectorAll('.game-pokemons-store .my-box.clickable.game-pokemon-portrait');
+    storeBoxes.forEach(highlightSynergies);
 }
 
 let observedSynergyList = null;
 
 function observeSynergyList() {
-    var propositionListNode = document.querySelector('.synergies-container.my-container');
-    if (propositionListNode && propositionListNode !== observedSynergyList) {
-        synergyObserver.observe(propositionListNode, { childList: true });
-        parseSynergies(propositionListNode);
-        observedSynergyList = propositionListNode;
-        console.log('Observer attached to .synergies-container.my-container');
-    } else if (!propositionListNode) {
-        observedSynergyList = null; // Reset if element is gone
+    var synergyContainer = document.querySelectorAll(`.synergies-container.my-container > div[style*=--border-thin]`);
+    if (synergyContainer && (synergiesToHighlight.length === 0 || synergiesToHighlight.length !== synergyContainer.length)) {
+        parseSynergies(synergyContainer);
     }
 }
+
+var synergyObserver = new MutationObserver((mutations) => { });
 
 let pokemonMetaPromise = null;
 let pokemonMetaLoaded = false;
@@ -311,6 +301,9 @@ async function observePokemonDetails(element) {
     if (itemContainer && !isTeambuilder) {
         return; // Already processed this element
     }
+    if (isTeambuilder && settings.highlightEnabled) {
+        highlightSynergies(pokemonContainer);
+    }
 
     var imageElement = pokemonContainer.querySelector('.game-pokemon-detail-portrait');
 
@@ -369,13 +362,71 @@ async function observePokemonDetails(element) {
 
         pokemonNames.forEach(function (pokemonName) {
             createMetaElement(itemContainer, pokemonContainer, pokemonName);
-            if (!metaFound) {
-                createMetaElement(itemContainer, pokemonContainer, pokemonNameByID);
-            }
         });
+        if (!metaFound) {
+            createMetaElement(itemContainer, pokemonContainer, pokemonNameByID);
+        }
         if (itemContainer) {
             itemContainer.dataset.pokemonName = pokemonNameByID;
         }
+    }
+}
+
+var newPokemon = [];
+function observeBoosters() {
+    var boosterCards = document.querySelectorAll('.booster-card.flipped');
+    if (boosterCards && boosterCards.length === 8) {
+        boosterCards.forEach(function (boosterCard) {
+            if (!boosterCard.classList.contains('pacc_updated') && boosterCard.querySelector('.new')) {
+                imageElement = boosterCard.querySelector('img');
+                if (imageElement) {
+                    var pokemonId = extractNumbersFromUrl(imageElement.src);
+                    if (!newPokemon.includes(pokemonId)) {
+                        newPokemon.push(pokemonId);
+                    }
+                }
+                boosterCard.classList.add('pacc_updated');
+            }
+        });
+    } else {
+        return; // Already processed this element
+    }
+}
+
+function observeCollectionList() {
+    var collectionList = document.querySelector('.pokemon-collection-list');
+    if (collectionList && !collectionList.classList.contains('pacc_updated')) {
+        newPokemon.forEach(function (pokemonId) {
+            var collectionPokemonElement = collectionList.querySelector(`img[src*="${pokemonId}"]`);
+            if (collectionPokemonElement) {
+                collectionPokemonElement.parentElement.classList.add('image-shimmer-wrapper');
+            }
+        });
+        collectionList.classList.add('pacc_updated');
+    }
+    var clickedPokemon = document.querySelector('.pokemon-emotions-modal .pokemon-portrait.unlocked')
+    if (clickedPokemon && !clickedPokemon.classList.contains('pacc_updated')) {
+        var pokemonId = extractNumbersFromUrl(clickedPokemon.src);
+        newPokemon = newPokemon.filter(key => key !== pokemonId);
+
+        var collectionPokemonElement = collectionList.querySelector(`img[src*="${pokemonId}"]`);
+        if (collectionPokemonElement) {
+            collectionPokemonElement.parentElement.classList.remove('image-shimmer-wrapper');
+        }
+        clickedPokemon.classList.add('pacc_updated');
+    }
+}
+
+function observeBrokenImages() {
+    var brokenImages = document.querySelectorAll('img[src="/assets/ui/missing-portrait.png"]');
+    if (brokenImages && brokenImages.length > 0) {
+        brokenImages.forEach(function (brokenImage) {
+            var avatarData = brokenImage.getAttribute('avatar');
+            if (avatarData) {
+                var urlData = avatarData.slice(0, avatarData.lastIndexOf('/'));
+                brokenImage.src = "https://raw.githubusercontent.com/keldaanCommunity/SpriteCollab/master/portrait/" + urlData + '/Normal.png'
+            }
+        });
     }
 }
 
@@ -384,6 +435,11 @@ function pollForObservers() {
         observeSynergyList();
         observeStoreList();
         observePropositionList();
+    }
+    if (window.location.href.includes('/lobby')) {
+        observeBrokenImages();
+        observeBoosters();
+        observeCollectionList();
     }
 }
 
@@ -404,5 +460,3 @@ setInterval(function () {
         observePokemonDetails(document.querySelector('.game-pokemon-detail.in-board'));
     }
 }, 250);
-
-console.log('loaded pacc');
