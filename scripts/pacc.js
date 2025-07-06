@@ -1,8 +1,8 @@
 /**
  * IDEAS
- * Synergy highlight
- * Easier Meta Item Display?
  * Complete Item list
+ * PUT new pokemon in system storage
+ * FIX shop hover menu on pokemon portrait
  */
 
 var synergiesToHighlight = [];
@@ -129,7 +129,7 @@ let observedSynergyList = null;
 
 function observeSynergyList() {
     var synergyContainer = document.querySelectorAll(`.synergies-container.my-container > div[style*=--border-thin]`);
-    if (synergyContainer && (synergiesToHighlight.length === 0 || synergiesToHighlight.length !== synergyContainer.length)) {
+    if (synergyContainer) {
         parseSynergies(synergyContainer);
     }
 }
