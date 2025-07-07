@@ -1,7 +1,6 @@
 /**
  * IDEAS
  * Complete Item list
- * PUT new pokemon in system storage
  * FIX shop hover menu on pokemon portrait
  */
 
@@ -94,7 +93,7 @@ function addSynergyShimmer(icon) {
             shimmerOverlay.className = 'shimmer-overlay';
             icon.classList.add('shimmer');
             shimmerOverlay.style.right = coordinates.right > 0 ? (coordinates.right - coordinates.width) + 'px' : coordinates.right + 'px';
-            if (icon.closest('#team-builder')) {
+            if (icon.closest('#team-builder') || icon.closest('.game-pokemon-detail')) {
                 shimmerOverlay.style.top = '0px';
             } else {
                 shimmerOverlay.style.top = coordinates.bottom + 'px';
@@ -129,7 +128,7 @@ let observedSynergyList = null;
 
 function observeSynergyList() {
     var synergyContainer = document.querySelectorAll(`.synergies-container.my-container > div[style*=--border-thin]`);
-    if (synergyContainer) {
+    if (synergyContainer && (synergiesToHighlight.length === 0 || synergiesToHighlight.length !== synergyContainer.length)) {
         parseSynergies(synergyContainer);
     }
 }
@@ -373,16 +372,42 @@ async function observePokemonDetails(element) {
 }
 
 var newPokemon = [];
+
+chrome.storage.sync.get(['newPokemon'], function (data) {
+    if (Array.isArray(data.newPokemon)) {
+        newPokemon = data.newPokemon;
+    }
+});
+
+function updateNewPokemonStorage() {
+    // Check if chrome and chrome.storage.sync are available
+    if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.sync &&
+        typeof chrome.storage.sync.set === "function"
+    ) {
+        try {
+            chrome.storage.sync.set({ newPokemon });
+        } catch (e) {
+            // do nothing
+        }
+    } else {
+        // Not in extension context, do nothing
+    }
+}
+
 function observeBoosters() {
     var boosterCards = document.querySelectorAll('.booster-card.flipped');
-    if (boosterCards && boosterCards.length === 8) {
+    if (boosterCards && boosterCards.length === 10) {
         boosterCards.forEach(function (boosterCard) {
             if (!boosterCard.classList.contains('pacc_updated') && boosterCard.querySelector('.new')) {
-                imageElement = boosterCard.querySelector('img');
+                imageElement = boosterCard.querySelector('.front img');
                 if (imageElement) {
                     var pokemonId = extractNumbersFromUrl(imageElement.src);
-                    if (!newPokemon.includes(pokemonId)) {
-                        newPokemon.push(pokemonId);
+                    if (pokemonId && !newPokemon.includes(pokemonId)) {
+                        newPokemon.push(pokemonId.replace('-', '/'));
+                        updateNewPokemonStorage(); // <-- update storage
                     }
                 }
                 boosterCard.classList.add('pacc_updated');
@@ -406,8 +431,9 @@ function observeCollectionList() {
     }
     var clickedPokemon = document.querySelector('.pokemon-emotions-modal .pokemon-portrait.unlocked')
     if (clickedPokemon && !clickedPokemon.classList.contains('pacc_updated')) {
-        var pokemonId = extractNumbersFromUrl(clickedPokemon.src);
+        var pokemonId = extractNumbersFromUrl(clickedPokemon.src).replace('-', '/');
         newPokemon = newPokemon.filter(key => key !== pokemonId);
+        updateNewPokemonStorage(); // <-- update storage
 
         var collectionPokemonElement = collectionList.querySelector(`img[src*="${pokemonId}"]`);
         if (collectionPokemonElement) {

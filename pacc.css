@@ -30,6 +30,10 @@
   cursor: var(--cursor-hover);
 }
 
+.pokemon-collection-item.image-shimmer-wrapper::after {
+  border-radius: 12px;
+}
+
 img.shimmer {
   position: relative;
   display: inline-block;
