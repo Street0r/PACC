@@ -47,7 +47,7 @@ img.shimmer+.shimmer-overlay {
   right: 0;
   pointer-events: none;
   content: "";
-  display: block;
+  display: inline-block;
   animation: shimmer 2s infinite;
   background: linear-gradient(135deg,
       transparent 25%,

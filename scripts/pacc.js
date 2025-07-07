@@ -94,7 +94,7 @@ function addSynergyShimmer(icon) {
             icon.classList.add('shimmer');
             shimmerOverlay.style.right = coordinates.right > 0 ? (coordinates.right - coordinates.width) + 'px' : coordinates.right + 'px';
             if (icon.closest('#team-builder') || icon.closest('.game-pokemon-detail')) {
-                if (icon.closest('.game-pokemon-detail')) {
+                if (icon.closest('.game-pokemon-detail' && !icon.closest('#team-builder'))) {
                     shimmerOverlay.style.right = coordinates.right > 0 ? (coordinates.right - coordinates.width) - coordinates.width + 'px' : coordinates.right - coordinates.width + 'px';
                 }
                 shimmerOverlay.style.top = '0px';
